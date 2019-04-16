@@ -19,7 +19,7 @@ metadata = dict(conf.items('metadata'))
 PACKAGENAME = metadata.get('package_name', 'astrodata')
 DESCRIPTION = metadata.get('description', 'Pythonic access to selected public astronomical data')
 AUTHOR = metadata.get('author', 'Tom Loredo')
-AUTHOR_EMAIL = metadata.get('author_email', '')
+AUTHOR_EMAIL = metadata.get('loredo@astro.cornell.edu', '')
 LICENSE = metadata.get('license', 'unknown')
 URL = metadata.get('url', 'https://github.com/tloredo/astrodata')
 __minimum_python_version__ = metadata.get("minimum_python_version", "3.6")
@@ -73,7 +73,7 @@ else:
 builtins._ASTROPY_PACKAGE_NAME_ = PACKAGENAME
 
 # VERSION should be PEP440 compatible (http://www.python.org/dev/peps/pep-0440)
-VERSION = metadata.get('version', '0.0.dev')
+VERSION = metadata.get('version', '2019.1b1')
 
 # Indicates if this version is a release version
 RELEASE = 'dev' not in VERSION
