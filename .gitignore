@@ -21,6 +21,10 @@ MANIFEST
 docs/api
 docs/_build
 
+# Sublime Text editor project files
+*.sublime-project
+*.sublime-workspace
+
 # Eclipse editor project files
 .project
 .pydevproject
@@ -52,9 +56,6 @@ distribute-*.tar.gz
 .tox
 .*.sw[op]
 *~
-.project
-.pydevproject
-.settings
 
 # Mac OSX
 .DS_Store
