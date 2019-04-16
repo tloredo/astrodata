@@ -12,12 +12,15 @@ import sys
 
 __minimum_python_version__ = "3.6"
 
+
 class UnsupportedPythonError(Exception):
     pass
+
 
 if sys.version_info < tuple((int(val) for val in __minimum_python_version__.split('.'))):
     raise UnsupportedPythonError("astrodata does not support Python < {}".format(__minimum_python_version__))
 
 if not _ASTROPY_SETUP_:
     # For egg_info test builds to pass, put package imports here.
-    from .example_mod import *
+    from .batse5bp import *
+    from .tesser import *
