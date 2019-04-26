@@ -46,25 +46,20 @@ def datetime2mjd2k(dt):
     return mjd2k + delta + 0.5
 
 
-def read_sector_metadata(ctnr, phdr, dhdr):
+def read_target_metadata(ctnr, phdr):
     """
-    Read sector-level parameters from FITS headers (primary & data) and store 
+    Read target parameters from a primary FITS headers and store 
     it in the provided container instance.
     """
     # TID as an int, and TIC version:
     ctnr.ticid = phdr['TICID']
     ctnr.ticver = phdr['TICVER']
 
-    # Sector and camera info:
-    ctnr.sector = phdr['SECTOR']
-    ctnr.camera = phdr['CAMERA']
-    ctnr.ccd = phdr['CCD']
-
     # Target star info:
     ctnr.equinox = phdr['EQUINOX']
     ctnr.ra = phdr['RA_OBJ']  # deg
     ctnr.dec = phdr['DEC_OBJ']  # deg
-    ctnr.pm_ra = phdr['PMRA']  # mas/yr
+    ctnr.pm_ra = phdr['PMRA']  # proper motion, mas/yr
     ctnr.pm_dec = phdr['PMDEC']
     ctnr.pm_tot = phdr['PMTOTAL']
     ctnr.mag = phdr['TESSMAG']
@@ -72,6 +67,19 @@ def read_sector_metadata(ctnr, phdr, dhdr):
     ctnr.logg = phdr['LOGG']  # cm/s^2]
     ctnr.metal = phdr['MH']  # log10([M/H])
     ctnr.radius = phdr['radius']  # solar radii
+
+
+def read_sector_metadata(ctnr, phdr, dhdr):
+    """
+    Read sector-level parameters from FITS headers (primary & data) and store 
+    it in the provided container instance.
+    """
+    read_target_metadata(ctnr, phdr)
+
+    # Sector and camera info:
+    ctnr.sector = phdr['SECTOR']
+    ctnr.camera = phdr['CAMERA']
+    ctnr.ccd = phdr['CCD']
 
     # Observation span:
     ctnr.t_start = dhdr["TSTART"]  # BJD
@@ -388,9 +396,17 @@ class TIDData:
             # print(sector, url, r.status_code, sep='\n', end='\n\n')
         self.sector_list = list(self.sectors.keys())
 
+        # Use the FITS primary header from the 1st available sector to get
+        # target metadata.
+        s1 = self.sectors[self.sector_list[0]]
+        try:
+            read_target_metadata(self, s1.lc.phdr)
+        except NameError:
+            read_target_metadata(self, s1.im.phdr)
+
         # Collect data for valid sectors.
-        for sector, sdata in self.sectors.items():
-            url = sdata.folder_url
+        # for sector, sdata in self.sectors.items():
+        #     url = sdata.folder_url
 
     def sector2folder(self, sector):
         """
