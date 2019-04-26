@@ -44,7 +44,6 @@ Data access
 To access data for TID 261136679, for example, create an instance of the
 `TIDData` class:
 
-.. code-block:: python
     from astrodata import tesser
 
     td = tesser.TIDData(261136679)
@@ -55,7 +54,6 @@ behavior via the `cache_fits` argument.  You can control whether or not
 LC or TPF data are downloaded via `get_lc` and `get_im` arguments.  For example,
 this call gets only the TPF (image) data, and caches it:
 
-.. code-block:: python
     td = tesser.TIDData(261136679, get_lc=False, get_im=True, cache_fits=True)
 
 Note that the TPF FITS files are large (~100 MB).  Monitor your cache!  Its location is platform-dependent but is likely to be in a `.astropy` folder in your home directory. (To locat it, call `astropy.utils.data._get_download_cache_locs()`).
