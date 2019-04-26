@@ -264,7 +264,8 @@ class SectorData:
     dvr_re = re.compile('^[\w-]*_dvr.pdf$')
     dvs_re = re.compile('^[\w-]*_dvs.pdf$')
 
-    def __init__(self, tid, sector, folder, folder_url, cache_fits=False):
+    def __init__(self, tid, sector, folder, folder_url,
+                 get_lc=True, get_im=False, cache_fits=False):
         self.tid = tid
         self.sector = sector
         self.folder = folder
@@ -322,13 +323,15 @@ class SectorData:
         # MJD version (a simple float instead of a datetime object):
         self.mjd2k = datetime2mjd2k(self.timestamp)
 
-        # Collect the sector image data.
-        #tpf_url = self.folder_url + self.tpf_name
-        #self.im = SectorImageData(self.tid, self.sector, tpf_url, cache_fits)
-
         # Collect the sector light curve data.
-        lc_url = self.folder_url + self.lc_name
-        self.lc = SectorLCData(self.tid, self.sector, lc_url, cache_fits)
+        if get_lc:
+            lc_url = self.folder_url + self.lc_name
+            self.lc = SectorLCData(self.tid, self.sector, lc_url, cache_fits)
+
+        # Collect the sector image data.
+        if get_im:
+            tpf_url = self.folder_url + self.tpf_name
+            self.im = SectorImageData(self.tid, self.sector, tpf_url, cache_fits)
 
     def show_dvr(self):
         """
@@ -363,7 +366,7 @@ class TIDData:
     url_base = 'https://archive.stsci.edu/missions/tess/tid/'
     folder_tmp = string.Template('s${sector}/${tid1}/${tid2}/${tid3}/${tid4}/')
 
-    def __init__(self, tid, cache_fits=False):
+    def __init__(self, tid, get_lc=True, get_im=False, cache_fits=False):
         """
         Provide access to TESS data for the specified target ID.
         """
@@ -380,7 +383,7 @@ class TIDData:
             r = requests.head(url)
             if r.status_code < 400:
                 self.sectors[sector] = SectorData(tid, sector, folder, url,
-                                                  cache_fits)
+                                                  get_lc, get_im, cache_fits)
             # print(sector, url, r.status_code, sep='\n', end='\n\n')
         self.sector_list = list(self.sectors.keys())
 
