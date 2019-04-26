@@ -14,11 +14,18 @@ Documentation access
 The following functions will open TESS documentation web pages in your
 default browser:
 
-* `show_tess_manual()`:  Display the TESS archive manual
-* `show_products()`:  Display the TESS data product summary page
-* `show_alerts_table()`:  Display the TESS alerts data access page.
+`show_tess_manual()`:
+    Display the TESS archive manual
+
+`show_products()`:
+    Display the TESS data product summary page
+
+`show_alerts_table()`:
+    Display the TESS alerts data access page.
+
     The table is organized by TID and includes brief comments for each TID
     that triggered an alert.
+    
     Note that this table links to LC and TPF FITS files that are named
     differently from those accessed by this module---they are archived
     as high-level science products (HLSPs).
