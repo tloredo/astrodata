@@ -7,12 +7,12 @@ AstroData: Pythonic access to selected public astronomical data
 
 Currently available modules/datasets:
 
-* batse5bp:  Access to GRB data from the CGRO BATSE mission, including
+* **batse5bp:**  Access to GRB data from the CGRO BATSE mission, including
   bursts subsequent to the 4B catalog (the last official catalog).
   The "5Bp" part of the name signifies "5B, prelimnary."  Documentation
   is available at:  `<http://inference.astro.cornell.edu/batse/>`_.
 
-* tesser:  Access to data from the TESS mission, via TIC TID.  TIC = Target
+* **tesser:**  Access to data from the TESS mission, via TIC TID.  TIC = Target
   Input Catalog, TID = Target ID.
 
 
