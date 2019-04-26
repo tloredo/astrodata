@@ -1,9 +1,6 @@
 AstroData: Pythonic access to selected public astronomical data
 ---------------------------------------------------------------
 
-.. image:: http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat
-    :target: http://www.astropy.org
-    :alt: Powered by Astropy Badge
 
 Currently available modules/datasets:
 
@@ -31,3 +28,7 @@ Contributing
 
 AstroData is open source, built on open source, and third-party contributions
 are welcome, including contributions of documentation, tests, and tutorials.
+
+.. image:: http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat
+    :target: http://www.astropy.org
+    :alt: Powered by Astropy Badge
