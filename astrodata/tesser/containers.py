@@ -46,10 +46,10 @@ def datetime2mjd2k(dt):
     return mjd2k + delta + 0.5
 
 
-def read_common_data(ctnr, phdr, dhdr):
+def read_sector_metadata(ctnr, phdr, dhdr):
     """
-    Read common parameters from FITS headers (primary & data) and store it in
-    the provided container instance.
+    Read sector-level parameters from FITS headers (primary & data) and store 
+    it in the provided container instance.
     """
     # TID as an int, and TIC version:
     ctnr.ticid = phdr['TICID']
@@ -115,7 +115,7 @@ class SectorImageData:
             self.dhdr = hdus[1].header
             self.data = hdus[1].data
 
-        read_common_data(self, self.phdr, self.dhdr)
+        read_sector_metadata(self, self.phdr, self.dhdr)
 
         # Epochs for the images:
         # Time is adjusted barycentric Julian date (days): BJD - 2457000 (BTJD)
@@ -186,7 +186,7 @@ class SectorLCData:
             self.dhdr = hdus[1].header
             self.data = hdus[1].data
 
-        read_common_data(self, self.phdr, self.dhdr)
+        read_sector_metadata(self, self.phdr, self.dhdr)
 
         # Epochs for the photometry:
         # Time is adjusted barycentric Julian date (days): BJD - 2457000 (BTJD)
