@@ -102,13 +102,13 @@ class SectorImageData:
     Container for image data associated with a TID from a particular sector.
     """
 
-    def __init__(self, tid, sector, tpf_url):
+    def __init__(self, tid, sector, tpf_url, cache_fits=False):
         """
         Load image data from the TPF file for a particular TID and sector.
         """
         self.tid, self.sector = tid, sector
         self.tpf_url = tpf_url
-        with fits.open(tpf_url) as hdus:
+        with fits.open(tpf_url, cache=cache_fits) as hdus:
             # Primary HDU has target info, incl. stellar params.
             self.phdr = hdus[0].header
             # Next HDU is a binary table with the image data.
@@ -173,13 +173,13 @@ class SectorLCData:
     Container for light curve data associated with a TID from a particular sector.
     """
 
-    def __init__(self, tid, sector, lc_url):
+    def __init__(self, tid, sector, lc_url, cache_fits=False):
         """
         Load light curve data from the LC file for a particular TID and sector.
         """
         self.tid, self.sector = tid, sector
         self.lc_url = lc_url
-        with fits.open(lc_url) as hdus:
+        with fits.open(lc_url, cache=cache_fits) as hdus:
             # Primary HDU has target info, incl. stellar params.
             self.phdr = hdus[0].header
             # Next HDU is a binary table with the image data.
@@ -264,7 +264,7 @@ class SectorData:
     dvr_re = re.compile('^[\w-]*_dvr.pdf$')
     dvs_re = re.compile('^[\w-]*_dvs.pdf$')
 
-    def __init__(self, tid, sector, folder, folder_url):
+    def __init__(self, tid, sector, folder, folder_url, cache_fits=False):
         self.tid = tid
         self.sector = sector
         self.folder = folder
@@ -324,11 +324,11 @@ class SectorData:
 
         # Collect the sector image data.
         #tpf_url = self.folder_url + self.tpf_name
-        #self.im = SectorImageData(self.tid, self.sector, tpf_url)
+        #self.im = SectorImageData(self.tid, self.sector, tpf_url, cache_fits)
 
         # Collect the sector light curve data.
         lc_url = self.folder_url + self.lc_name
-        self.lc = SectorLCData(self.tid, self.sector, lc_url)
+        self.lc = SectorLCData(self.tid, self.sector, lc_url, cache_fits)
 
     def show_dvr(self):
         """
@@ -363,7 +363,7 @@ class TIDData:
     url_base = 'https://archive.stsci.edu/missions/tess/tid/'
     folder_tmp = string.Template('s${sector}/${tid1}/${tid2}/${tid3}/${tid4}/')
 
-    def __init__(self, tid):
+    def __init__(self, tid, cache_fits=False):
         """
         Provide access to TESS data for the specified target ID.
         """
@@ -379,7 +379,8 @@ class TIDData:
             url = self.url_base + folder
             r = requests.head(url)
             if r.status_code < 400:
-                self.sectors[sector] = SectorData(tid, sector, folder, url)
+                self.sectors[sector] = SectorData(tid, sector, folder, url,
+                                                  cache_fits)
             # print(sector, url, r.status_code, sep='\n', end='\n\n')
         self.sector_list = list(self.sectors.keys())
 
