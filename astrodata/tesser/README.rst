@@ -7,6 +7,12 @@ Target ID (TID).  It also provides convenience functions for accessing
 documentation at the MAST TESS archive, both for the TESS mission, and
 for specific sources.
 
+Acronyms used here:
+* TIC: TESS Input Catalog
+* TID: Target ID
+* TPF: Target Pixel File (containing a time series of images)
+* LC: Light curve
+
 
 Documentation access
 --------------------
@@ -25,8 +31,30 @@ default browser:
 
     The table is organized by TID and includes brief comments for each TID
     that triggered an alert.
-    
+
     Note that this table links to LC and TPF FITS files that are named
     differently from those accessed by this module---they are archived
     as high-level science products (HLSPs).
 
+
+Data access
+-----------
+
+To access data for TID 261136679, for example, create an instance of the
+`TIDData` class:
+
+.. code-block:: python
+    from astrodata import tesser
+
+    td = tesser.TIDData(261136679)
+
+By default, this will download only pre-processed LC data, and the FITS file
+containing the data will not be locally cached.  You can alter the cache 
+behavior via the `cache_fits` argument.  You can control whether or not
+LC or TPF data are downloaded via `get_lc` and `get_im` arguments.  For example,
+this call gets only the TPF (image) data, and caches it:
+
+.. code-block:: python
+    td = tesser.TIDData(261136679, get_lc=False, get_im=True, cache_fits=True)
+
+Note that the TPF FITS files are large (~100 MB).  Monitor your cache!  Its location is platform-dependent but is likely to be in a `.astropy` folder in your home directory. (To locat it, call `astropy.utils.data._get_download_cache_locs()`).
