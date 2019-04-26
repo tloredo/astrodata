@@ -8,6 +8,7 @@ documentation at the MAST TESS archive, both for the TESS mission, and
 for specific sources.
 
 Acronyms used here:
+
 * TIC: TESS Input Catalog
 * TID: Target ID
 * TPF: Target Pixel File (containing a time series of images)
