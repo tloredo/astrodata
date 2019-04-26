@@ -375,7 +375,8 @@ class TIDData:
         print(self.tid16)
 
         # Find valid sectors by checking for a valid HTTP header.
-        all_sectors = range(10)
+        # TODO:  What's the proper upper limit on # of sectors?
+        all_sectors = range(26)
         self.sectors = {}
         for sector in all_sectors:
             folder = self.sector2folder(sector)
