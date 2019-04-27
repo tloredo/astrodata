@@ -46,63 +46,136 @@ def datetime2mjd2k(dt):
     return mjd2k + delta + 0.5
 
 
+class TargetMetadata:
+    """
+    Container for target metadata.
+    """
+
+    # TODO:  Probably should get descriptions, units from FITS header
+
+    # map from attribute name to header parameter:
+    name_map = dict(
+        ticid='TICID',
+        ticver='TICVER',
+        equinox = 'EQUINOX',
+        ra = 'RA_OBJ',
+        dec = 'DEC_OBJ',
+        pm_ra = 'PMRA',
+        pm_dec = 'PMDEC',
+        pm_tot = 'PMTOTAL',
+        mag = 'TESSMAG',
+        T_eff = 'TEFF',
+        logg = 'LOGG',
+        metal = 'MH',
+        radius = 'RADIUS')
+
+    comment_re=re.compile(r'\[(.*)\]\s(.*)')
+
+    def __init__(self, phdr):
+        """
+        Gather target metadata from the primary header of a sector FITS file.
+        """
+        # Get parameter values and descriptions.
+        self.desc={}
+        for attr, pname in self.name_map.items():
+            val = phdr[pname]
+            if type(val) is fits.card.Undefined:
+                val = None
+            setattr(self, attr, val)
+            self.desc[attr]=phdr.comments[pname]
+
+        # Get units for each parameter.
+        self.units = {}
+        for attr, desc in self.desc.items():
+            m=self.comment_re.match(desc)
+            if m:
+                self.units[attr] = m.group(1)
+                self.desc[attr] = m.group(2)  # desc w/ units removed
+            else:
+                self.units[attr]=None
+
+        # self.units = dict((aname, self.name_map[aname][2]) for aname in
+        #                   self.name_map.keys())
+
+    def __str__(self):
+        lines=['Metadata for {} (TIC v{}):'.format(self.ticid, self.ticver)]
+        lines.append('RA, dec (J{}, {}):  {}  {}'.format(
+            self.equinox,
+            self.units['ra'],
+            self.ra, self.dec))
+        lines.append('PM (RA, dec, tot; {}):  {}  {}  {}'.format(
+            self.units['pm_ra'],
+            self.pm_ra,
+            self.pm_dec,
+            self.pm_tot))
+        lines.append('TESS magnitude:  {}'.format(self.mag))
+        lines.append('T_eff ({}):  {}'.format(self.units['T_eff'], self.T_eff))
+        # log(g) units are actually units of g, inside the log.
+        lines.append('log10(g/[{}]):  {}'.format(self.units['logg'], self.logg))
+        lines.append('Metalicity [{}]:  {}'.format(self.units['metal'], self.metal))
+        lines.append('Radius ({}):  {}'.format(self.units['radius'], self.radius))
+        return '\n'.join(lines)
+
+
 def read_target_metadata(ctnr, phdr):
     """
-    Read target parameters from a primary FITS headers and store 
+    Read target parameters from a primary FITS headers and store
     it in the provided container instance.
     """
     # TID as an int, and TIC version:
-    ctnr.ticid = phdr['TICID']
-    ctnr.ticver = phdr['TICVER']
+    ctnr.ticid=phdr['TICID']
+    ctnr.ticver=phdr['TICVER']
 
     # Target star info:
-    ctnr.equinox = phdr['EQUINOX']
-    ctnr.ra = phdr['RA_OBJ']  # deg
-    ctnr.dec = phdr['DEC_OBJ']  # deg
-    ctnr.pm_ra = phdr['PMRA']  # proper motion, mas/yr
-    ctnr.pm_dec = phdr['PMDEC']
-    ctnr.pm_tot = phdr['PMTOTAL']
-    ctnr.mag = phdr['TESSMAG']
-    ctnr.T_eff = phdr['TEFF']  # K
-    ctnr.logg = phdr['LOGG']  # cm/s^2]
-    ctnr.metal = phdr['MH']  # log10([M/H])
-    ctnr.radius = phdr['radius']  # solar radii
+    ctnr.equinox=phdr['EQUINOX']
+    ctnr.ra=phdr['RA_OBJ']  # deg
+    ctnr.dec=phdr['DEC_OBJ']  # deg
+    ctnr.pm_ra=phdr['PMRA']  # proper motion, mas/yr
+    ctnr.pm_dec=phdr['PMDEC']
+    ctnr.pm_tot=phdr['PMTOTAL']
+    ctnr.mag=phdr['TESSMAG']
+    ctnr.T_eff=phdr['TEFF']  # K
+    ctnr.logg=phdr['LOGG']  # cm/s^2]
+    ctnr.metal=phdr['MH']  # log10([M/H])
+    ctnr.radius=phdr['radius']  # solar radii
 
 
 def read_sector_metadata(ctnr, phdr, dhdr):
     """
-    Read sector-level parameters from FITS headers (primary & data) and store 
+    Read sector-level parameters from FITS headers (primary & data) and store
     it in the provided container instance.
+
+    Also compute and store the total exposure, computed from these parameters.
     """
     read_target_metadata(ctnr, phdr)
 
     # Sector and camera info:
-    ctnr.sector = phdr['SECTOR']
-    ctnr.camera = phdr['CAMERA']
-    ctnr.ccd = phdr['CCD']
+    ctnr.sector=phdr['SECTOR']
+    ctnr.camera=phdr['CAMERA']
+    ctnr.ccd=phdr['CCD']
 
     # Observation span:
-    ctnr.t_start = dhdr["TSTART"]  # BJD
-    ctnr.t_stop = dhdr["TSTOP"]  # BJD
-    ctnr.t_elapse = dhdr["TELAPSE"]  # days
-    ctnr.deadc = dhdr["DEADC"]  # deadtime correction factor
-    ctnr.t_live = dhdr["LIVETIME"]  # elapsed * deadc
+    ctnr.t_start=dhdr['TSTART']  # BJD
+    ctnr.t_stop=dhdr['TSTOP']  # BJD
+    ctnr.t_elapse=dhdr['TELAPSE']  # days
+    ctnr.deadc=dhdr['DEADC']  # deadtime correction factor
+    ctnr.t_live=dhdr['LIVETIME']  # elapsed * deadc
 
-    ctnr.num_frm = dhdr["NUM_FRM"]  # number of frames
+    ctnr.num_frm=dhdr['NUM_FRM']  # number of frames
 
     # Per-frame photon integration time in days:
-    ctnr.int_time = dhdr["INT_TIME"]
+    ctnr.int_time=dhdr['INT_TIME']
 
     # TODO:  Understand deadtime corrections; are these in int_time?
 
     # Total frame time (integration + readout) in days:
-    ctnr.framtim = dhdr["FRAMETIM"]
+    ctnr.framtim=dhdr['FRAMETIM']
 
     # Number of frames and total exposure:
-    ctnr.num_frm = dhdr["NUM_FRM"]
+    ctnr.num_frm=dhdr['NUM_FRM']
     # Note `texp` is not the same as the FITS EXPOSURE value, which is the
     # time on-source.
-    ctnr.texp = sec2day * ctnr.int_time * ctnr.num_frm
+    ctnr.texp=sec2day * ctnr.int_time * ctnr.num_frm
 
 
 class SectorImageData:
@@ -110,67 +183,67 @@ class SectorImageData:
     Container for image data associated with a TID from a particular sector.
     """
 
-    def __init__(self, tid, sector, tpf_url, cache_fits=False):
+    def __init__(self, tid, sector, tpf_url, cache_fits = False):
         """
         Load image data from the TPF file for a particular TID and sector.
         """
-        self.tid, self.sector = tid, sector
-        self.tpf_url = tpf_url
-        with fits.open(tpf_url, cache=cache_fits) as hdus:
+        self.tid, self.sector=tid, sector
+        self.tpf_url=tpf_url
+        with fits.open(tpf_url, cache = cache_fits) as hdus:
             # Primary HDU has target info, incl. stellar params.
-            self.phdr = hdus[0].header
+            self.phdr=hdus[0].header
             # Next HDU is a binary table with the image data.
-            self.dhdr = hdus[1].header
-            self.data = hdus[1].data
+            self.dhdr=hdus[1].header
+            self.data=hdus[1].data
 
         read_sector_metadata(self, self.phdr, self.dhdr)
 
         # Epochs for the images:
         # Time is adjusted barycentric Julian date (days): BJD - 2457000 (BTJD)
-        self.time = self.data["TIME"]
+        self.time=self.data["TIME"]
 
         # Flux images and errors, masked:
-        image = self.data["FLUX"]
-        self.flux = image  # all fluxes, including anomalous values
+        image=self.data["FLUX"]
+        self.flux=image  # all fluxes, including anomalous values
         # QUALITY != 0 indicates an "anomaly" for the datum at that epoch;
         # see SDPDD Sxn 9, Tbl 28.
         # Omit anomalies and images with any inf of NaN.
-        mask = np.any(np.isfinite(image), axis=(1, 2)) & (self.data["QUALITY"] == 0)
-        self.time_mask = mask
-        self.mtime = self.time_mask[mask]
-        self.mflux = np.ascontiguousarray(image[mask], dtype=np.float64)
+        mask=np.any(np.isfinite(image), axis = (1, 2)) & (self.data["QUALITY"] == 0)
+        self.time_mask=mask
+        self.mtime=self.time_mask[mask]
+        self.mflux=np.ascontiguousarray(image[mask], dtype = np.float64)
 
-        image = self.data["FLUX_ERR"]
-        self.flux_err = image  # unmasked
-        self.mflux_err = np.ascontiguousarray(image[mask], dtype=np.float64)
+        image=self.data["FLUX_ERR"]
+        self.flux_err=image  # unmasked
+        self.mflux_err=np.ascontiguousarray(image[mask], dtype = np.float64)
 
         # Time relative to midpoint:
-        ref_time = 0.5 * (np.min(self.time)+np.max(self.time))
-        self.rtime = self.time - ref_time
-        ref_time = 0.5 * (np.min(self.mtime)+np.max(self.mtime))
-        self.rmtime = self.mtime - ref_time
+        ref_time=0.5 * (np.min(self.time)+np.max(self.time))
+        self.rtime=self.time - ref_time
+        ref_time=0.5 * (np.min(self.mtime)+np.max(self.mtime))
+        self.rmtime=self.mtime - ref_time
 
         # Mean, median images for masked data:
-        self.mflux_mean = np.mean(self.flux, axis=0)
-        self.mflux_median = np.median(self.flux, axis=0)
+        self.mflux_mean=np.mean(self.flux, axis = 0)
+        self.mflux_median=np.median(self.flux, axis = 0)
 
     def plot_mean(self):
         plt.figure()
-        plt.imshow(self.mflux_mean.T, cmap="gray_r")
+        plt.imshow(self.mflux_mean.T, cmap = "gray_r")
         plt.title('Mean TPF image, {}:s{}'.format(self.tid, self.sector))
         plt.xticks([])
         plt.yticks([])
 
     def plot_median(self):
         plt.figure()
-        plt.imshow(self.mflux_median.T, cmap="gray_r")
+        plt.imshow(self.mflux_median.T, cmap = "gray_r")
         plt.title('Median TPF image, {}:s{}'.format(self.tid, self.sector))
         plt.xticks([])
         plt.yticks([])
 
     def plot_mmm(self):
         plt.figure()
-        plt.imshow(self.mflux_median.T-self.mflux_mean.T, cmap="gray_r")
+        plt.imshow(self.mflux_median.T-self.mflux_mean.T, cmap = "gray_r")
         plt.title('Median-mean TPF image, {}:s{}'.format(self.tid, self.sector))
         plt.xticks([])
         plt.yticks([])
@@ -181,61 +254,61 @@ class SectorLCData:
     Container for light curve data associated with a TID from a particular sector.
     """
 
-    def __init__(self, tid, sector, lc_url, cache_fits=False):
+    def __init__(self, tid, sector, lc_url, cache_fits = False):
         """
         Load light curve data from the LC file for a particular TID and sector.
         """
-        self.tid, self.sector = tid, sector
-        self.lc_url = lc_url
-        with fits.open(lc_url, cache=cache_fits) as hdus:
+        self.tid, self.sector=tid, sector
+        self.lc_url=lc_url
+        with fits.open(lc_url, cache = cache_fits) as hdus:
             # Primary HDU has target info, incl. stellar params.
-            self.phdr = hdus[0].header
+            self.phdr=hdus[0].header
             # Next HDU is a binary table with the image data.
-            self.dhdr = hdus[1].header
-            self.data = hdus[1].data
+            self.dhdr=hdus[1].header
+            self.data=hdus[1].data
 
         read_sector_metadata(self, self.phdr, self.dhdr)
 
         # Epochs for the photometry:
         # Time is adjusted barycentric Julian date (days): BJD - 2457000 (BTJD)
-        self.time = self.data["TIME"]
+        self.time=self.data["TIME"]
 
         # Simple aperture photometry (SAP) fluxes and errors, masked:
-        self.sap = self.data["SAP_FLUX"]
+        self.sap=self.data["SAP_FLUX"]
         # QUALITY != 0 indicates an "anomaly" for the datum at that epoch;
         # see SDPDD Sxn 9, Tbl 28.  For LC data, this is "aperture photometry
         # quality.""
         # Omit anomalies and data with inf or NaN values.
-        mask = np.isfinite(self.sap) & (self.data["QUALITY"] == 0)
-        self.mask = mask
-        self.mtime = self.time[mask]
-        self.msap = np.ascontiguousarray(self.sap[mask], dtype=np.float64)
+        mask=np.isfinite(self.sap) & (self.data["QUALITY"] == 0)
+        self.mask=mask
+        self.mtime=self.time[mask]
+        self.msap=np.ascontiguousarray(self.sap[mask], dtype = np.float64)
 
-        self.sap_err = self.data["SAP_FLUX_ERR"]
-        self.msap_err = np.ascontiguousarray(self.sap_err[mask], dtype=np.float64)
+        self.sap_err=self.data["SAP_FLUX_ERR"]
+        self.msap_err=np.ascontiguousarray(self.sap_err[mask], dtype = np.float64)
 
         # PDC-corrected SAP photometry:
-        self.sap_pdc = self.data["PDCSAP_FLUX"]
-        self.msap_pdc = np.ascontiguousarray(self.sap_pdc[mask], dtype=np.float64)
-        self.sap_pdc_err = self.data["PDCSAP_FLUX_ERR"]
-        self.msap_pdc_err = np.ascontiguousarray(self.sap_pdc_err[mask],
-                                                 dtype=np.float64)
+        self.sap_pdc=self.data["PDCSAP_FLUX"]
+        self.msap_pdc=np.ascontiguousarray(self.sap_pdc[mask], dtype = np.float64)
+        self.sap_pdc_err=self.data["PDCSAP_FLUX_ERR"]
+        self.msap_pdc_err=np.ascontiguousarray(self.sap_pdc_err[mask],
+                                                 dtype = np.float64)
 
         # Centroid location & err from PSF fitting, pxl units:
-        self.x = self.data["PSF_CENTR1"]
-        self.mx = np.ascontiguousarray(self.x[mask], dtype=np.float64)
-        self.x_err = self.data["PSF_CENTR1_ERR"]
-        self.mx_err = np.ascontiguousarray(self.x_err[mask], dtype=np.float64)
-        self.y = self.data["PSF_CENTR2"]
-        self.my = np.ascontiguousarray(self.y[mask], dtype=np.float64)
-        self.y_err = self.data["PSF_CENTR2_ERR"]
-        self.my_err = np.ascontiguousarray(self.y_err[mask], dtype=np.float64)
+        self.x=self.data["PSF_CENTR1"]
+        self.mx=np.ascontiguousarray(self.x[mask], dtype = np.float64)
+        self.x_err=self.data["PSF_CENTR1_ERR"]
+        self.mx_err=np.ascontiguousarray(self.x_err[mask], dtype = np.float64)
+        self.y=self.data["PSF_CENTR2"]
+        self.my=np.ascontiguousarray(self.y[mask], dtype = np.float64)
+        self.y_err=self.data["PSF_CENTR2_ERR"]
+        self.my_err=np.ascontiguousarray(self.y_err[mask], dtype = np.float64)
 
         # Time relative to midpoint:
-        ref_time = 0.5 * (np.min(self.time)+np.max(self.time))
-        self.rtime = self.time - ref_time
-        ref_time = 0.5 * (np.min(self.mtime)+np.max(self.mtime))
-        self.rmtime = self.mtime - ref_time
+        ref_time=0.5 * (np.min(self.time)+np.max(self.time))
+        self.rtime=self.time - ref_time
+        ref_time=0.5 * (np.min(self.mtime)+np.max(self.mtime))
+        self.rmtime=self.mtime - ref_time
 
 
 class SectorData:
@@ -244,7 +317,7 @@ class SectorData:
     """
 
     # regexp for name of target pixel file (TPF), a FITS file:
-    tpf_re = re.compile(r'''
+    tpf_re=re.compile(r'''
         tess                        # start of file name
         (?P<yr>\d{4})(?P<od>\d{3})             # start of timestamp: yyyy ddd
         (?P<hr>\d{2})(?P<min>\d{2})(?P<sec>\d{2})   # timestamp hh mm ss
@@ -255,7 +328,7 @@ class SectorData:
         _tp.fits''', re.VERBOSE)
 
     # regexp for name of light curve file, a FITS file:
-    lc_re = re.compile(r'''
+    lc_re=re.compile(r'''
         tess                        # start of file name
         (?P<yr>\d{4})(?P<od>\d{3})             # start of timestamp: yyyy ddd
         (?P<hr>\d{2})(?P<min>\d{2})(?P<sec>\d{2})   # timestamp hh mm ss
@@ -266,11 +339,11 @@ class SectorData:
         _lc.fits''', re.VERBOSE)
 
     # regexp for valid data file names in archive folder:
-    fname_re = re.compile('^[\w-]*.\w*$')
+    fname_re=re.compile('^[\w-]*.\w*$')
 
     # regexps for PDF files:
-    dvr_re = re.compile('^[\w-]*_dvr.pdf$')
-    dvs_re = re.compile('^[\w-]*_dvs.pdf$')
+    dvr_re=re.compile('^[\w-]*_dvr.pdf$')
+    dvs_re=re.compile('^[\w-]*_dvs.pdf$')
 
     def __init__(self, tid, sector, folder, folder_url,
                  get_lc=True, get_im=False, cache_fits=False):
@@ -379,8 +452,7 @@ class TIDData:
         Provide access to TESS data for the specified target ID.
         """
         self.tid = tid
-        self.tid16 = '{:0>16d}'.format(int(tid))
-        print(self.tid16)
+        self.tid16 = '{:0>16d}'.format(int(tid))  # pad with leading 0s
 
         # Find valid sectors by checking for a valid HTTP header.
         # TODO:  What's the proper upper limit on # of sectors?
@@ -400,9 +472,9 @@ class TIDData:
         # target metadata.
         s1 = self.sectors[self.sector_list[0]]
         try:
-            read_target_metadata(self, s1.lc.phdr)
+            self.meta = TargetMetadata(s1.lc.phdr)
         except NameError:
-            read_target_metadata(self, s1.im.phdr)
+            self.meta = TargetMetadata(s1.im.phdr)
 
         # Collect data for valid sectors.
         # for sector, sdata in self.sectors.items():
